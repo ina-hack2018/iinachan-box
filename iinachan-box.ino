@@ -3,6 +3,7 @@
 #include <SHT31.h>
 #include <Arduino.h>
 #include <Wire.h>
+#include <math.h>
 
 #define SOUND_SENSOR A0
 #define LIGHT_SENSOR A1
@@ -37,39 +38,67 @@ void setup()
 
 void loop() {
     // read sound
-    long int sound = 0;
+    long lsound = 0;
     for(int i=0; i<32; i++) {
-        sound += analogRead(SOUND_SENSOR);
+        lsound += analogRead(SOUND_SENSOR);
     }
-    sound >>= 5;
-    Serial.print("sound: ");
-    Serial.println(sound);
+    int sound = (int) lsound >> 5;
+//    Serial.print("sound: ");
+//    Serial.println(sound);
     
     // read light
     int light = analogRead(LIGHT_SENSOR);
-    Serial.print("light: ");
-    Serial.println(light);
+//    Serial.print("light: ");
+//    Serial.println(light);
     
     //read pir
     bool pir = digitalRead(PIR_MOTION_SENSOR);
-    Serial.print("pir: ");
-    Serial.println(pir);
-    
+//    Serial.print("pir: ");
+//    Serial.println(pir);
+//    
     // read temp/humidity
     float temp = sht31.getTemperature();
     float hum = sht31.getHumidity();
-    Serial.print("Temp = "); 
-    Serial.print(temp);
-    Serial.println(" C"); //The unit for  Celsius because original arduino don't support speical symbols
-    Serial.print("Hum = "); 
-    Serial.print(hum);
-    Serial.println("%"); 
-    Serial.println();
+//    Serial.print("Temp = "); 
+//    Serial.print(temp);
+//    Serial.println(" C"); //The unit for  Celsius because original arduino don't support speical symbols
+//    Serial.print("Hum = "); 
+//    Serial.print(hum);
+//    Serial.println("%"); 
+//    Serial.println();
     delay(500);
-    
+    int data = packageDataForLorawan(sound, light, pir, temp, hum);
     digitalWrite(LED, ledStatus);
     ledStatus = ledStatus == HIGH ? LOW : HIGH;
-
+    
 //    lorawan.sendData("test");
 }
+
+int packageDataForLorawan(int sound, int light, bool pir, float temp, float hum) {
+  // data  | byte 
+  // sound | 1
+  // light | 1
+  // pir   | 1
+  // temp  | 1
+  // humidity 1
+  byte bsound = map(sound, 0, 1023, 0, 255);
+  byte blight = map(light, 0, 1023, 0, 255);
+  byte bpir = pir;
+  byte btemp = ceil(temp);
+  byte bhum = ceil(hum);
+  debug("bsound", bsound);
+  debug("blight", blight);
+  debug("bpir", bpir);
+  debug("btemp", btemp);
+  debug("bhumidity", bhum);
+  return 0;
+}
+
+void debug(char *key, long val) {
+  Serial.print(key);
+  Serial.print(": ");
+  Serial.println(val);
+}
+
+
 
